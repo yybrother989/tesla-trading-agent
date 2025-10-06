@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
-import { Input } from '../../ui/Input';
 
 interface Message {
   id: string;
@@ -27,9 +26,8 @@ export const ChatbotTab: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [isComposing, setIsComposing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Initialize with welcome message after component mounts to avoid hydration issues
   useEffect(() => {
@@ -63,7 +61,6 @@ export const ChatbotTab: React.FC = () => {
 
     setMessages(prev => [...prev, newMessage]);
     setInputValue('');
-    setIsComposing(false);
 
     // Simulate AI response
     setTimeout(() => {
@@ -94,8 +91,7 @@ export const ChatbotTab: React.FC = () => {
   };
 
   const handleQuickAction = (action: string) => {
-    setInputValue(action);
-    setIsComposing(true);
+           setInputValue(action);
     // Focus the input field
     setTimeout(() => {
       inputRef.current?.focus();
@@ -197,10 +193,9 @@ export const ChatbotTab: React.FC = () => {
               <textarea
                 ref={inputRef}
                 value={inputValue}
-                onChange={(e) => {
-                  setInputValue(e.target.value);
-                  setIsComposing(e.target.value.trim().length > 0);
-                }}
+                       onChange={(e) => {
+                         setInputValue(e.target.value);
+                       }}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me about Tesla trading..."
                 className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-tesla-red focus:border-transparent resize-none"

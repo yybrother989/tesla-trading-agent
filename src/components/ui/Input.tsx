@@ -5,6 +5,7 @@ interface InputProps {
   placeholder?: string;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   className?: string;
   disabled?: boolean;
   icon?: React.ReactNode;
@@ -15,6 +16,7 @@ export const Input: React.FC<InputProps> = ({
   placeholder,
   value,
   onChange,
+  onKeyPress,
   className = '',
   disabled = false,
   icon
@@ -31,6 +33,7 @@ export const Input: React.FC<InputProps> = ({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onKeyPress={onKeyPress}
         disabled={disabled}
         className={`
           block w-full px-3 py-2 border border-border rounded-lg

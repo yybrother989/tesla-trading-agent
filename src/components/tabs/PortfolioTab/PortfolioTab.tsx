@@ -63,7 +63,7 @@ export const PortfolioTab: React.FC = () => {
               <p className="text-3xl font-bold text-foreground">${totalValue.toLocaleString()}</p>
             </div>
             <div>
-              <p className="text-sm text-text-muted">Today's Change</p>
+              <p className="text-sm text-text-muted">Today&apos;s Change</p>
               <div className="flex items-center space-x-2">
                 <span className={`text-2xl font-bold ${totalGainLoss >= 0 ? 'text-success' : 'text-error'}`}>
                   {totalGainLoss >= 0 ? '+' : ''}${totalGainLoss.toLocaleString()}

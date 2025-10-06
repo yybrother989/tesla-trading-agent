@@ -115,9 +115,9 @@ const Sparkline: React.FC<{ data: number[] }> = ({ data }) => {
 };
 
 export const DashboardTab: React.FC = () => {
-  const [totalValue, setTotalValue] = useState(46315);
-  const [todayChange, setTodayChange] = useState(1247);
-  const [todayChangePercent, setTodayChangePercent] = useState(2.45);
+  const [totalValue] = useState(46315);
+  const [todayChange] = useState(1247);
+  const [todayChangePercent] = useState(2.45);
   const [isValueVisible, setIsValueVisible] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [activeChips, setActiveChips] = useState({
@@ -184,7 +184,7 @@ export const DashboardTab: React.FC = () => {
             </p>
           </div>
           <div>
-            <p className="text-sm text-text-muted mb-1">Today's Change</p>
+            <p className="text-sm text-text-muted mb-1">Today&apos;s Change</p>
             <div className="flex items-baseline space-x-2">
               <p className={`text-3xl font-bold ${todayChange >= 0 ? 'text-success' : 'text-error'}`} aria-label={`Today's change, ${todayChange >= 0 ? 'plus' : 'minus'} ${Math.abs(todayChangePercent)} percent`}>
                 {todayChange >= 0 ? '+' : ''}${Math.abs(todayChange).toLocaleString()}

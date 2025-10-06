@@ -2,61 +2,58 @@
 
 import React, { useState } from 'react';
 import { ThemeProvider } from '../context/ThemeContext';
+import { AIQueryProvider, useAIQuery } from '../context/AIQueryContext';
 import { Header } from './layout/Header';
-import { ChatDrawer } from './ChatDrawer';
 import { MobileNavigation } from './MobileNavigation';
-import { DashboardTab } from './tabs/DashboardTab/DashboardTab';
 import { ChatbotTab } from './tabs/ChatbotTab/ChatbotTab';
-import { AnalysisTab } from './tabs/AnalysisTab/AnalysisTab';
-import { PortfolioTab } from './tabs/PortfolioTab/PortfolioTab';
+import { AnalystTab } from './tabs/AnalystTab/AnalystTab';
+import { ReportTab } from './tabs/ReportTab/ReportTab';
 
-type TabType = 'dashboard' | 'chatbot' | 'analysis' | 'portfolio';
+type TabType = 'chatbot' | 'analyst' | 'report';
 
-export const TradingInterface: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [isChatOpen, setIsChatOpen] = useState(false);
+const TradingInterfaceContent: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<TabType>('chatbot');
+  const { setQuery, setAutoSend } = useAIQuery();
 
-  const handleAskAI = () => {
+  const handleAskAI = (context?: string, shouldAutoSend: boolean = false) => {
+    // Set the query in context
+    if (context) {
+      setQuery(context);
+      setAutoSend(shouldAutoSend);
+    }
+    
+    // Switch to chatbot tab (removed duplicate ChatDrawer)
     setActiveTab('chatbot');
-    setIsChatOpen(true);
+    
+    // Scroll to top smoothly
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return <DashboardTab />;
       case 'chatbot':
         return <ChatbotTab />;
-      case 'analysis':
-        return <AnalysisTab />;
-      case 'portfolio':
-        return <PortfolioTab />;
+      case 'analyst':
+        return <AnalystTab onAskAI={handleAskAI} />;
+      case 'report':
+        return <ReportTab onAskAI={handleAskAI} />;
       default:
-        return <DashboardTab />;
+        return <ChatbotTab />;
     }
   };
 
   return (
-    <ThemeProvider>
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <Header onAskAI={handleAskAI} />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <Header onAskAI={() => handleAskAI()} />
 
-        {/* Navigation */}
-        <nav className="bg-card border-b border-border">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:block bg-card border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-center space-x-12">
               {[
-                {
-                  id: 'dashboard',
-                  name: 'Dashboard',
-                  description: 'Overview',
-                  icon: (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                    </svg>
-                  )
-                },
                 {
                   id: 'chatbot',
                   name: 'Assistant',
@@ -68,9 +65,9 @@ export const TradingInterface: React.FC = () => {
                   )
                 },
                 {
-                  id: 'analysis',
+                  id: 'analyst',
                   name: 'Analysis',
-                  description: 'Technical & Sentiment',
+                  description: 'Technical & Sentiment & Fundamental',
                   icon: (
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -78,12 +75,12 @@ export const TradingInterface: React.FC = () => {
                   )
                 },
                 {
-                  id: 'portfolio',
-                  name: 'Portfolio',
-                  description: 'Holdings & Performance',
+                  id: 'report',
+                  name: 'Report',
+                  description: 'Comprehensive Analysis',
                   icon: (
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   )
                 }
@@ -102,7 +99,7 @@ export const TradingInterface: React.FC = () => {
                   {tab.icon}
                   <div className="text-center">
                     <div className="font-medium text-sm">{tab.name}</div>
-                    <div className="text-xs text-text-muted hidden sm:block">{tab.description}</div>
+                    <div className="text-xs text-text-muted">{tab.description}</div>
                   </div>
                 </button>
               ))}
@@ -110,17 +107,32 @@ export const TradingInterface: React.FC = () => {
           </div>
         </nav>
 
+        {/* Mobile Navigation Header */}
+        <div className="md:hidden bg-card border-b border-border">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-center">
+              <h2 className="text-lg font-semibold text-foreground capitalize">{activeTab}</h2>
+            </div>
+          </div>
+        </div>
+
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
+        <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-6 pb-20 md:pb-6">
           {renderTabContent()}
         </main>
-
-        {/* Chat Drawer */}
-        <ChatDrawer isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
         
-        {/* Mobile Navigation */}
-        <MobileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
+      {/* Mobile Navigation */}
+      <MobileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+    </div>
+  );
+};
+
+export const TradingInterface: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AIQueryProvider>
+        <TradingInterfaceContent />
+      </AIQueryProvider>
     </ThemeProvider>
   );
 };

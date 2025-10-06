@@ -52,23 +52,23 @@ export const PortfolioTab: React.FC = () => {
   const totalGainLossPercent = totalValue > 0 ? (totalGainLoss / (totalValue - totalGainLoss)) * 100 : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Portfolio Overview */}
-      <Card>
+      <Card className="p-4 md:p-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Portfolio Overview</h2>
-          <div className="flex items-center justify-center space-x-6">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Portfolio Overview</h2>
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
             <div>
-              <p className="text-sm text-text-muted">Total Value</p>
-              <p className="text-3xl font-bold text-foreground">${totalValue.toLocaleString()}</p>
+              <p className="text-xs md:text-sm text-text-muted">Total Value</p>
+              <p className="text-2xl md:text-3xl font-bold text-foreground">${totalValue.toLocaleString()}</p>
             </div>
             <div>
-              <p className="text-sm text-text-muted">Today&apos;s Change</p>
-              <div className="flex items-center space-x-2">
-                <span className={`text-2xl font-bold ${totalGainLoss >= 0 ? 'text-success' : 'text-error'}`}>
+              <p className="text-xs md:text-sm text-text-muted">Today&apos;s Change</p>
+              <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                <span className={`text-xl md:text-2xl font-bold ${totalGainLoss >= 0 ? 'text-success' : 'text-error'}`}>
                   {totalGainLoss >= 0 ? '+' : ''}${totalGainLoss.toLocaleString()}
                 </span>
-                <span className={`text-lg font-medium ${totalGainLoss >= 0 ? 'text-success' : 'text-error'}`}>
+                <span className={`text-sm md:text-lg font-medium ${totalGainLoss >= 0 ? 'text-success' : 'text-error'}`}>
                   ({totalGainLoss >= 0 ? '+' : ''}{totalGainLossPercent.toFixed(2)}%)
                 </span>
               </div>
@@ -78,7 +78,7 @@ export const PortfolioTab: React.FC = () => {
       </Card>
 
       {/* Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <Card>
           <div className="text-center">
             <p className="text-sm text-text-muted mb-1">1 Day Performance</p>

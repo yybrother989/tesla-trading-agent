@@ -153,11 +153,11 @@ export const DashboardTab: React.FC = () => {
     : 'py-3';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Hero Card - Portfolio Overview */}
-      <Card className="p-6">
+      <Card className="p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-foreground">Portfolio Overview</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">Portfolio Overview</h2>
           <button
             onClick={() => setIsValueVisible(!isValueVisible)}
             className="p-2 text-text-muted hover:text-foreground transition-colors"
@@ -176,10 +176,10 @@ export const DashboardTab: React.FC = () => {
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <div>
             <p className="text-sm text-text-muted mb-1">Total Value</p>
-            <p className="text-4xl font-bold text-foreground" aria-label={`Total portfolio value, ${isValueVisible ? `$${totalValue.toLocaleString()}` : 'hidden'}`}>
+            <p className="text-2xl md:text-4xl font-bold text-foreground" aria-label={`Total portfolio value, ${isValueVisible ? `$${totalValue.toLocaleString()}` : 'hidden'}`}>
               {isValueVisible ? `$${totalValue.toLocaleString()}` : '••••••'}
             </p>
           </div>

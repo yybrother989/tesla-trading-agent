@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
+import { getChatService, ChatMessage } from '../../../services/chatService';
+import { useAIQuery } from '../../../context/AIQueryContext';
 
 interface Message {
   id: string;
@@ -26,8 +28,19 @@ export const ChatbotTab: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const queryProcessedRef = useRef<string | null>(null); // Track processed queries via ref (always current)
+  const chatService = getChatService();
+  const { query, autoSend, clearQuery } = useAIQuery();
+  const [hasProcessedQuery, setHasProcessedQuery] = useState<string | null>(null); // Track which query was processed
+
+  // Debug: Log render with current state (remove in production)
+  // useEffect(() => {
+  //   console.log('ChatbotTab render - inputValue:', inputValue, 'query:', query, 'hasProcessedQuery:', hasProcessedQuery);
+  // });
 
   // Initialize with welcome message after component mounts to avoid hydration issues
   useEffect(() => {
@@ -44,44 +57,144 @@ export const ChatbotTab: React.FC = () => {
     }
   }, [isInitialized]);
 
-  // Auto-scroll to bottom when new messages are added
+  // Check for pending query on mount (only runs once)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (query && query !== queryProcessedRef.current) {
+      queryProcessedRef.current = query;
+      setInputValue(query);
+      setHasProcessedQuery(query);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run on mount
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = async (messageText?: string) => {
+    const textToSend = messageText || inputValue;
+    if (!textToSend.trim() || isLoading) return;
 
     const newMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue,
+      text: textToSend,
       sender: 'user',
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, newMessage]);
+    const previousInput = inputValue;
     setInputValue('');
+    setIsLoading(true);
+    setError(null);
+    
+    // Clear query after sending - but only if it matches what we're sending
+    if (query && (query === textToSend || query === previousInput)) {
+      clearQuery();
+    }
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        'Based on current Tesla market data, I recommend monitoring the $250 resistance level closely.',
-        'Tesla\'s Q4 delivery numbers look promising. Consider a bullish position if it breaks above $260.',
-        'The sentiment analysis shows mixed signals. I\'d suggest waiting for clearer market direction.',
-        'Technical indicators suggest a potential pullback. Consider taking profits if you\'re long.',
-        'Tesla\'s fundamentals remain strong despite recent volatility. Long-term outlook is positive.'
-      ];
+    try {
+      const response = await chatService.sendMessage(textToSend);
       
-      const aiResponse: Message = {
+      if (response.success && response.message) {
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          text: response.message,
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, aiResponse]);
+      } else {
+        throw new Error(response.error || 'Failed to get response from AI');
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+      
+      // Add error message to chat
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: responses[Math.floor(Math.random() * responses.length)],
+        text: 'Sorry, I encountered an error. Please try again or check your API configuration.',
         sender: 'assistant',
         timestamp: new Date()
       };
-
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Handle incoming query from context
+  useEffect(() => {
+    // Use ref to check if this query was already processed (avoids stale closure issues)
+    if (query && query !== queryProcessedRef.current) {
+      // Update ref immediately to prevent duplicate processing
+      queryProcessedRef.current = query;
+      const currentQuery = query; // Capture query in closure
+      
+      // Populate input field - set state immediately
+      setInputValue(currentQuery);
+      setHasProcessedQuery(currentQuery);
+      
+      // Verify and sync after React processes state update
+      const verifyTimeout = setTimeout(() => {
+        if (inputRef.current) {
+          // Ensure React state and DOM are in sync
+          if (inputRef.current.value !== currentQuery) {
+            // Update React state
+            setInputValue(currentQuery);
+            // Set DOM directly as backup (React controlled component will override if needed)
+            inputRef.current.value = currentQuery;
+            // Trigger onChange to keep React state in sync
+            const syntheticEvent = new Event('input', { bubbles: true });
+            inputRef.current.dispatchEvent(syntheticEvent);
+          }
+        }
+      }, 200);
+      
+      // Focus and scroll after tab switch completes
+      const focusTimeoutId = setTimeout(() => {
+        if (inputRef.current) {
+          // Final check - ensure value persists
+          if (inputRef.current.value !== currentQuery) {
+            setInputValue(currentQuery);
+            inputRef.current.value = currentQuery;
+          }
+          inputRef.current.focus();
+          inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 800);
+      
+      // Auto-send if enabled
+      let sendTimeoutId: NodeJS.Timeout | null = null;
+      if (autoSend) {
+        sendTimeoutId = setTimeout(() => {
+          if (currentQuery.trim() && !isLoading) {
+            handleSendMessage(currentQuery);
+            clearQuery();
+          }
+        }, 1300);
+      }
+      
+      return () => {
+        clearTimeout(verifyTimeout);
+        clearTimeout(focusTimeoutId);
+        if (sendTimeoutId) clearTimeout(sendTimeoutId);
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  // Reset processed flag when query is cleared
+  useEffect(() => {
+    if (!query) {
+      setHasProcessedQuery(null);
+      queryProcessedRef.current = null;
+    }
+  }, [query]);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -99,14 +212,14 @@ export const ChatbotTab: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="space-y-4 md:space-y-8">
       {/* Quick Actions */}
-      <Card className="p-6">
+      <Card className="p-4 md:p-6">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
-          <p className="text-sm text-text-muted mt-1">Common Tesla analyses</p>
+          <h3 className="text-base md:text-lg font-semibold text-foreground">Quick Actions</h3>
+          <p className="text-xs md:text-sm text-text-muted mt-1">Common Tesla analyses</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
           {[
             'Analyze Tesla stock price',
             'Check market sentiment',
@@ -127,8 +240,8 @@ export const ChatbotTab: React.FC = () => {
         </div>
       </Card>
 
-      {/* Chat Interface */}
-      <Card className="flex flex-col h-[600px] p-6">
+            {/* Chat Interface */}
+             <Card className="flex flex-col h-[400px] md:h-[600px] p-4 md:p-6">
         {/* Message History */}
         <div className="flex-1 overflow-y-auto space-y-6 pr-2">
           {messages.length === 1 && messages[0].sender === 'assistant' ? (
@@ -188,28 +301,55 @@ export const ChatbotTab: React.FC = () => {
         
         {/* Composer */}
         <div className="border-t border-border pt-4 mt-4">
+          {/* Query Indicator */}
+          {query && (
+            <div className="mb-3 p-3 bg-tesla-red/10 border border-tesla-red/20 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-tesla-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <p className="text-sm text-tesla-red font-medium">
+                  {autoSend ? 'Auto-sending query...' : 'Query loaded - ready to send'}
+                </p>
+              </div>
+            </div>
+          )}
           <div className="flex space-x-3">
             <div className="flex-1">
               <textarea
                 ref={inputRef}
-                value={inputValue}
-                       onChange={(e) => {
-                         setInputValue(e.target.value);
-                       }}
+                value={query && query === hasProcessedQuery ? query : inputValue}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setInputValue(newValue);
+                  // Clear query when user manually edits away from the query
+                  if (query && newValue !== query && newValue.trim() !== query.trim()) {
+                    clearQuery();
+                  }
+                }}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me about Tesla trading..."
-                className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-tesla-red focus:border-transparent resize-none"
+                className={`w-full px-4 py-3 border rounded-lg bg-card text-foreground placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-tesla-red focus:border-transparent resize-none transition-all duration-200 ${
+                  query ? 'border-tesla-red shadow-lg shadow-tesla-red/20' : 'border-border'
+                }`}
                 rows={3}
                 aria-label="Chat message input"
               />
             </div>
             <Button 
               onClick={handleSendMessage} 
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || isLoading}
               className="px-6 self-end"
               aria-label="Send message"
             >
-              Send
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Sending...</span>
+                </div>
+              ) : (
+                'Send'
+              )}
             </Button>
           </div>
         </div>

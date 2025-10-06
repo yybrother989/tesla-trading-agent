@@ -12,14 +12,28 @@ A modern, responsive web interface for an AI-powered Tesla trading assistant. Bu
 - Interactive chips for analysis overlays
 
 ### 🤖 **AI Assistant**
-- Dedicated chatbot interface for trading recommendations
+- OpenAI GPT-4 integration for intelligent trading recommendations
+- Extensible architecture for custom LLM integration
 - Quick action buttons for common Tesla analyses
 - Full-width dialogue area with message history
-- Real-time AI responses and market insights
+- Real-time AI responses with Tesla-specific context
+- Chart annotation integration for contextual analysis
 
 ### 📈 **Analysis Tab**
-- **Technical Analysis**: Interactive charts, indicators, and trading signals
-- **Sentiment Analysis**: Market mood tracking with multiple data sources
+- **Technical Analysis**: 
+  - Interactive TradingView Lightweight Charts with annotations
+  - Real-time Alpha Vantage technical indicators (RSI, MACD, SMA, Bollinger Bands)
+  - Chart event tooltips with "Ask AI" integration
+  - Time period selectors (1D, 1W, 1M, 3M, 1Y)
+- **Fundamental Analysis**: 
+  - Company overview from Alpha Vantage
+  - Income statement, balance sheet, and cash flow data
+  - Key financial metrics and ratios
+  - AI-powered fundamental analysis
+- **Sentiment Analysis**: 
+  - Placeholder architecture for custom sentiment APIs
+  - Mock data with clear integration points
+  - Multi-source sentiment tracking (news, social, analyst)
 - Sub-navigation for easy switching between analysis types
 
 ### 💼 **Portfolio Management**
@@ -63,8 +77,8 @@ A modern, responsive web interface for an AI-powered Tesla trading assistant. Bu
    ```
 
 3. **Start the development server**
-   ```bash
-   npm run dev
+```bash
+npm run dev
    ```
 
 4. **Open your browser**
@@ -122,12 +136,53 @@ src/
 ## 🔧 Configuration
 
 ### Environment Variables
-Create a `.env.local` file for local development:
 
-```env
-# Add your environment variables here
-NEXT_PUBLIC_API_URL=your_api_url_here
-```
+**Important**: Never commit your actual API keys to version control!
+
+1. **Copy the template file**:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. **Edit `.env.local` with your actual API keys**:
+   ```env
+   # Alpha Vantage API Configuration
+   ALPHA_VANTAGE_API_KEY=your_actual_alpha_vantage_api_key
+   
+   # OpenAI API Configuration
+   OPENAI_API_KEY=your_actual_openai_api_key
+   OPENAI_MODEL=gpt-4
+   OPENAI_API_ENDPOINT=https://api.openai.com/v1
+   
+   # Optional: For future custom LLM integration
+   # CUSTOM_LLM_ENDPOINT=https://your-custom-llm-endpoint.com/v1
+   # CUSTOM_LLM_API_KEY=your_custom_llm_api_key_here
+   
+   # MCP Server Configuration
+   MCP_SERVER_URL=ws://localhost:3001
+   ```
+
+**File Purpose**:
+- `.env.example` - Template file with placeholder values (safe to commit)
+- `.env.local` - Your actual configuration with real API keys (gitignored, never commit)
+
+#### API Setup Instructions
+
+1. **Alpha Vantage API Key**:
+   - Visit [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
+   - Sign up for a free account
+   - Get your API key (5 calls/minute free tier)
+   - Replace `YOUR_ALPHA_VANTAGE_API_KEY_HERE` in `.env.local` with your actual key
+
+2. **OpenAI API Key**:
+   - Visit [OpenAI Platform](https://platform.openai.com/api-keys)
+   - Create an API key
+   - Replace `YOUR_OPENAI_API_KEY_HERE` in `.env.local` with your actual key
+   - Ensure you have credits in your OpenAI account
+
+3. **Rate Limits**:
+   - Alpha Vantage: 5 calls/minute (free), 75 calls/minute (premium)
+   - OpenAI: Based on your plan and model usage
 
 ### Customization
 - **Theme**: Modify color variables in `src/app/globals.css`

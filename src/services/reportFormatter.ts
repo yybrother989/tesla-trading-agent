@@ -5,15 +5,11 @@
  * Handles different report types and structures them for better readability
  */
 
-export interface FormattedSection {
-  type: 'header' | 'paragraph' | 'list' | 'keyValue' | 'divider' | 'highlight' | 'metric';
-  content: string;
-  level?: number; // For headers (1-6)
-  items?: string[]; // For lists
-  key?: string; // For key-value pairs
-  value?: string;
-  className?: string;
-}
+export type FormattedSection =
+  | { type: 'header' | 'paragraph' | 'highlight' | 'metric'; content: string; level?: number; className?: string }
+  | { type: 'list'; items: string[] }
+  | { type: 'keyValue'; key: string; value: string }
+  | { type: 'divider'; content?: string };
 
 export interface FormattedReport {
   sections: FormattedSection[];
@@ -158,7 +154,6 @@ export function formatReportContent(
       flushList();
       sections.push({
         type: 'divider',
-        content: '',
       });
       continue;
     }

@@ -47,7 +47,7 @@ export const FormattedReport: React.FC<FormattedReportProps> = ({ content, repor
 
 interface ContentElement {
   type: 'h1' | 'h2' | 'h3' | 'h4' | 'paragraph' | 'list' | 'table' | 'divider' | 'highlight';
-  content: string;
+  content?: string;
   items?: string[];
   rows?: string[][];
   level?: number;
@@ -75,14 +75,14 @@ function parseContent(content: string): ContentElement[] {
 
   const flushList = () => {
     if (currentList.length > 0) {
-      elements.push({ type: 'list', items: [...currentList] });
+      elements.push({ type: 'list', items: [...currentList], content: '' });
       currentList = [];
     }
   };
 
   const flushTable = () => {
     if (currentTable.length > 0 && tableHeaders.length > 0) {
-      elements.push({ type: 'table', rows: [tableHeaders, ...currentTable] });
+      elements.push({ type: 'table', rows: [tableHeaders, ...currentTable], content: '' });
       currentTable = [];
       tableHeaders = [];
       inTable = false;
@@ -157,7 +157,7 @@ function parseContent(content: string): ContentElement[] {
       flushTable();
       
       // Handle **bold** list items specially
-      let listItem = line
+      const listItem = line
         .replace(/^[-*•]\s+/, '')
         .replace(/^\d+[.)]\s+/, '')
         .replace(/^[a-z]\)\s+/i, '')
@@ -196,34 +196,34 @@ function renderElement(element: ContentElement): React.ReactNode {
     case 'h1':
       return (
         <h1 className="text-3xl font-bold text-foreground mt-8 mb-4 pb-2 border-b border-border">
-          {element.content}
+          {element.content || ''}
         </h1>
       );
 
     case 'h2':
       return (
         <h2 className="text-2xl font-semibold text-foreground mt-6 mb-3">
-          {element.content}
+          {element.content || ''}
         </h2>
       );
 
     case 'h3':
       return (
         <h3 className="text-xl font-semibold text-foreground mt-5 mb-2 text-tesla-red">
-          {element.content}
+          {element.content || ''}
         </h3>
       );
 
     case 'h4':
       return (
         <h4 className="text-lg font-medium text-foreground mt-4 mb-2">
-          {element.content}
+          {element.content || ''}
         </h4>
       );
 
     case 'paragraph':
       // Skip paragraphs that are just whitespace or very short
-      if (element.content.trim().length < 3) {
+      if (!element.content || element.content.trim().length < 3) {
         return null;
       }
       
@@ -244,7 +244,7 @@ function renderElement(element: ContentElement): React.ReactNode {
       
       return (
         <p className="text-foreground leading-relaxed">
-          {formatInlineText(element.content)}
+          {element.content ? formatInlineText(element.content) : ''}
         </p>
       );
 
@@ -311,6 +311,7 @@ function renderElement(element: ContentElement): React.ReactNode {
       return <hr className="my-6 border-border" />;
 
     case 'highlight':
+      if (!element.content) return null;
       return (
         <div className="bg-info/10 border-l-4 border-tesla-red p-4 my-4 rounded-r">
           <p className="text-foreground leading-relaxed">
@@ -330,7 +331,6 @@ function renderElement(element: ContentElement): React.ReactNode {
 function formatInlineText(text: string): React.ReactNode {
   // Split by markdown patterns and create React elements
   const parts: React.ReactNode[] = [];
-  let currentIndex = 0;
 
   // Pattern for **bold**
   const boldPattern = /\*\*(.+?)\*\*/g;
@@ -342,19 +342,22 @@ function formatInlineText(text: string): React.ReactNode {
   const allMatches: Array<{ index: number; length: number; type: 'bold' | 'italic' | 'code'; content: string }> = [];
 
   // Find all matches
-  let match;
-  while ((match = boldPattern.exec(text)) !== null) {
+  let match: RegExpExecArray | null;
+  match = boldPattern.exec(text);
+  while (match !== null) {
     allMatches.push({
       index: match.index,
       length: match[0].length,
       type: 'bold',
       content: match[1],
     });
+    match = boldPattern.exec(text);
   }
 
-  while ((match = italicPattern.exec(text)) !== null) {
+  match = italicPattern.exec(text);
+  while (match !== null) {
     // Skip if it's already part of a bold match
-    const isInBold = allMatches.some(m => m.type === 'bold' && match.index >= m.index && match.index < m.index + m.length);
+    const isInBold = allMatches.some(m => m.type === 'bold' && match!.index >= m.index && match!.index < m.index + m.length);
     if (!isInBold) {
       allMatches.push({
         index: match.index,
@@ -363,15 +366,18 @@ function formatInlineText(text: string): React.ReactNode {
         content: match[1],
       });
     }
+    match = italicPattern.exec(text);
   }
 
-  while ((match = codePattern.exec(text)) !== null) {
+  match = codePattern.exec(text);
+  while (match !== null) {
     allMatches.push({
       index: match.index,
       length: match[0].length,
       type: 'code',
       content: match[1],
     });
+    match = codePattern.exec(text);
   }
 
   // Sort by index
